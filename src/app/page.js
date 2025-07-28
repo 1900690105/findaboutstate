@@ -2,22 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MapPin, Loader2, AlertCircle } from "lucide-react";
 import { AIState } from "../../config/AIConfig";
-
-// Mock ShowData component
-const ShowData = ({ data, state, setSubmitted }) => (
-  <div className="p-6 bg-white rounded-lg shadow-xl">
-    <h2 className="text-2xl font-bold mb-4">Cities in {state}</h2>
-    <button
-      onClick={() => setSubmitted(false)}
-      className="bg-indigo-600 text-white px-4 py-2 rounded-md"
-    >
-      Back to Form
-    </button>
-    <pre className="mt-4 p-4 bg-gray-100 rounded-md text-sm overflow-auto">
-      {JSON.stringify(data, null, 2)}
-    </pre>
-  </div>
-);
+import ShowData from "./components/ShowData";
 
 export default function LocationForm() {
   const [formData, setFormData] = useState({
@@ -463,7 +448,7 @@ export default function LocationForm() {
               type="submit"
               onKeyDown={handleKeyDown}
               onClick={() => {
-                handleSubmit;
+                handleSubmit();
               }}
               disabled={isLoading || locationLoading}
               className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
