@@ -12,7 +12,7 @@ const ShowData = ({ data, state }) => {
         city.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         city.famous_for.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, data]);
 
   const getCityColor = (index) => {
     const colors = [
@@ -40,7 +40,7 @@ const ShowData = ({ data, state }) => {
               Explore {state}
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover the rich heritage, culture, and beauty of {state}'s
+              Discover the rich heritage, culture, and beauty of {state}&#39;s
               magnificent cities
             </p>
           </div>
@@ -202,7 +202,7 @@ const ShowData = ({ data, state }) => {
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 flex items-center">
                   <Star className="h-5 w-5 text-yellow-500 mr-2" />
-                  What It's Famous For
+                  What It&#39;s Famous For
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
                   {selectedCity.famous_for}
