@@ -462,6 +462,9 @@ export default function LocationForm() {
               ref={submitButtonRef}
               type="submit"
               onKeyDown={handleKeyDown}
+              onClick={() => {
+                handleSubmit;
+              }}
               disabled={isLoading || locationLoading}
               className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               aria-describedby="submit-help"
