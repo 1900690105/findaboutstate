@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AIState } from "../../config/AIConfig";
 import ShowData from "./components/ShowData";
+import Head from "next/head";
 
 export default function LocationForm() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,20 @@ export default function LocationForm() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [data, setData] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Refs for focus management
+  const stateInputRef = useRef(null);
+  const countryInputRef = useRef(null);
+  const submitButtonRef = useRef(null);
+  const resetButtonRef = useRef(null);
+
+  // Focus management on component mount
+  useEffect(() => {
+    if (stateInputRef.current) {
+      stateInputRef.current.focus();
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -44,29 +59,75 @@ export default function LocationForm() {
   };
 
   const handleKeyPress = (e) => {
+    // Enhanced keyboard navigation
     if (e.key === "Enter") {
+      e.preventDefault();
       handleSubmit(e);
     } else if (e.key === "Escape") {
+      e.preventDefault();
       handleReset();
+    } else if (e.key === "Tab") {
+      // Allow natural tab navigation, but handle custom logic if needed
+      return;
+    }
+  };
+
+  // Handle arrow key navigation between form elements
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const currentElement = e.target;
+
+      if (e.key === "ArrowDown") {
+        if (currentElement === stateInputRef.current) {
+          countryInputRef.current?.focus();
+        } else if (currentElement === countryInputRef.current) {
+          submitButtonRef.current?.focus();
+        } else if (currentElement === submitButtonRef.current) {
+          resetButtonRef.current?.focus();
+        }
+      } else if (e.key === "ArrowUp") {
+        if (currentElement === resetButtonRef.current) {
+          submitButtonRef.current?.focus();
+        } else if (currentElement === submitButtonRef.current) {
+          countryInputRef.current?.focus();
+        } else if (currentElement === countryInputRef.current) {
+          stateInputRef.current?.focus();
+        }
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      // Focus on first error field
+      if (errors.stateName) {
+        stateInputRef.current?.focus();
+      } else if (errors.countryName) {
+        countryInputRef.current?.focus();
+      }
+      return;
+    }
 
+    setIsLoading(true);
     console.log("Form submitted:", formData);
-    const prompt = `give me list of cities in given state:${formData.stateName},country:${formData.countryName}.include cities,short description,history,famous for. in json formate`;
+
+    const prompt = `give me list of cities in given state:${formData.stateName},country:${formData.countryName}.include cities,short description,history,famous for. in json format`;
+
     try {
       const result = await AIState.sendMessage(prompt);
       const response = await result.response.text();
-      const josn = JSON.parse(response);
-      setData(josn);
-      setSubmitted(true); // ✅ This line is important
+      const json = JSON.parse(response);
+      setData(json);
+      setSubmitted(true);
       console.log(response);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching city data:", error);
+      // You might want to set an error state here for user feedback
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,11 +137,54 @@ export default function LocationForm() {
       countryName: "",
     });
     setErrors({});
+    // Focus back to first input after reset
+    setTimeout(() => {
+      stateInputRef.current?.focus();
+    }, 0);
   };
+
+  // SEO Meta tags component
+  const SEOHead = () => (
+    <Head>
+      <title>
+        City Information Finder - Discover Cities by State and Country
+      </title>
+      <meta
+        name="description"
+        content="Find detailed information about cities in any state and country. Get city descriptions, history, and what they're famous for. Free city information lookup tool."
+      />
+      <meta
+        name="keywords"
+        content="city information, state cities, country cities, city finder, travel information, city history, city descriptions"
+      />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="robots" content="index, follow" />
+      <meta
+        property="og:title"
+        content="City Information Finder - Discover Cities by State and Country"
+      />
+      <meta
+        property="og:description"
+        content="Find detailed information about cities in any state and country. Get city descriptions, history, and what they're famous for."
+      />
+      <meta property="og:type" content="website" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content="City Information Finder" />
+      <meta
+        name="twitter:description"
+        content="Find detailed information about cities in any state and country."
+      />
+      <link
+        rel="canonical"
+        href={typeof window !== "undefined" ? window.location.href : ""}
+      />
+    </Head>
+  );
 
   if (submitted) {
     return (
       <>
+        <SEOHead />
         <ShowData
           data={data}
           state={formData.stateName}
@@ -91,118 +195,417 @@ export default function LocationForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2">
-            Location Information
-          </h1>
-          <p className="text-gray-600 text-center text-sm sm:text-base">
-            Please enter your state and country details
-          </p>
-        </div>
+    <>
+      <SEOHead />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        {/* Skip to main content link for screen readers */}
+        <a
+          href="#main-form"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-indigo-600 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 z-50"
+        >
+          Skip to main content
+        </a>
 
-        <div className="space-y-6">
-          {/* State Name Field */}
-          <div>
-            <label
-              htmlFor="stateName"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              State Name{" "}
-              <span className="text-red-500" aria-label="required">
-                *
-              </span>
-            </label>
-            <input
-              type="text"
-              id="stateName"
-              name="stateName"
-              value={formData.stateName}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyPress}
-              aria-required="true"
-              aria-invalid={errors.stateName ? "true" : "false"}
-              aria-describedby={
-                errors.stateName ? "stateName-error" : undefined
-              }
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
-                errors.stateName
-                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                  : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-              }`}
-              placeholder="Enter state name"
-            />
-            {errors.stateName && (
-              <p
-                id="stateName-error"
-                className="mt-1 text-sm text-red-600"
-                role="alert"
+        <main className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
+          <header className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2">
+              City Information Finder
+            </h1>
+            <p className="text-gray-600 text-center text-sm sm:text-base">
+              Discover cities in any state and country with detailed information
+            </p>
+          </header>
+
+          <form
+            id="main-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            noValidate
+          >
+            <fieldset>
+              <legend className="sr-only">Location Information Form</legend>
+
+              {/* State Name Field */}
+              <div>
+                <label
+                  htmlFor="stateName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  State or Province Name{" "}
+                  <span className="text-red-500" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <input
+                  ref={stateInputRef}
+                  type="text"
+                  id="stateName"
+                  name="stateName"
+                  value={formData.stateName}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  onKeyPress={handleKeyPress}
+                  aria-required="true"
+                  aria-invalid={errors.stateName ? "true" : "false"}
+                  aria-describedby={
+                    errors.stateName
+                      ? "stateName-error stateName-help"
+                      : "stateName-help"
+                  }
+                  className={`w-full px-3 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
+                    errors.stateName
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+                  }`}
+                  placeholder="e.g., California, Ontario, Bayern"
+                  autoComplete="address-level1"
+                />
+                <div id="stateName-help" className="mt-1 text-xs text-gray-500">
+                  Enter the state, province, or region name
+                </div>
+                {errors.stateName && (
+                  <p
+                    id="stateName-error"
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                    aria-live="polite"
+                  >
+                    <span aria-hidden="true">⚠ </span>
+                    {errors.stateName}
+                  </p>
+                )}
+              </div>
+
+              {/* Country Name Field */}
+              <div>
+                <label
+                  htmlFor="countryName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Country Name{" "}
+                  <span className="text-red-500" aria-label="required">
+                    *
+                  </span>
+                </label>
+                <input
+                  ref={countryInputRef}
+                  type="text"
+                  id="countryName"
+                  name="countryName"
+                  value={formData.countryName}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  onKeyPress={handleKeyPress}
+                  aria-required="true"
+                  aria-invalid={errors.countryName ? "true" : "false"}
+                  aria-describedby={
+                    errors.countryName
+                      ? "countryName-error countryName-help"
+                      : "countryName-help"
+                  }
+                  className={`w-full px-3 py-2 border text-black rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
+                    errors.countryName
+                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+                  }`}
+                  placeholder="e.g., United States, Canada, Germany"
+                  autoComplete="country-name"
+                />
+                <div
+                  id="countryName-help"
+                  className="mt-1 text-xs text-gray-500"
+                >
+                  Enter the full country name
+                </div>
+                {errors.countryName && (
+                  <p
+                    id="countryName-error"
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                    aria-live="polite"
+                  >
+                    <span aria-hidden="true">⚠ </span>
+                    {errors.countryName}
+                  </p>
+                )}
+              </div>
+            </fieldset>
+
+            {/* Form Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                ref={submitButtonRef}
+                type="submit"
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+                className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-describedby="submit-help"
               >
-                {errors.stateName}
-              </p>
-            )}
-          </div>
+                {isLoading ? (
+                  <>
+                    <span aria-hidden="true">⏳ </span>
+                    Loading...
+                  </>
+                ) : (
+                  "Find Cities"
+                )}
+              </button>
+              <div id="submit-help" className="sr-only">
+                Press Enter or click to search for cities in the specified
+                location
+              </div>
 
-          {/* Country Name Field */}
-          <div>
-            <label
-              htmlFor="countryName"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Country Name{" "}
-              <span className="text-red-500" aria-label="required">
-                *
-              </span>
-            </label>
-            <input
-              type="text"
-              id="countryName"
-              name="countryName"
-              value={formData.countryName}
-              onChange={handleInputChange}
-              aria-required="true"
-              aria-invalid={errors.countryName ? "true" : "false"}
-              aria-describedby={
-                errors.countryName ? "countryName-error" : undefined
-              }
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
-                errors.countryName
-                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                  : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-              }`}
-              placeholder="Enter country name"
-            />
-            {errors.countryName && (
-              <p
-                id="countryName-error"
-                className="mt-1 text-sm text-red-600"
-                role="alert"
+              <button
+                ref={resetButtonRef}
+                type="button"
+                onClick={handleReset}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+                className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-describedby="reset-help"
               >
-                {errors.countryName}
-              </p>
-            )}
-          </div>
+                Clear Form
+              </button>
+              <div id="reset-help" className="sr-only">
+                Press Escape or click to clear all form fields
+              </div>
+            </div>
 
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 font-medium"
-            >
-              Submit
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 font-medium"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
+            {/* Keyboard shortcuts help */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-md">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Keyboard Shortcuts:
+              </h3>
+              <ul className="text-xs text-gray-600 space-y-1">
+                <li>
+                  <kbd className="px-1 py-0.5 bg-gray-200 rounded">Enter</kbd> -
+                  Submit form
+                </li>
+                <li>
+                  <kbd className="px-1 py-0.5 bg-gray-200 rounded">Escape</kbd>{" "}
+                  - Clear form
+                </li>
+                <li>
+                  <kbd className="px-1 py-0.5 bg-gray-200 rounded">↑/↓</kbd> -
+                  Navigate between fields
+                </li>
+                <li>
+                  <kbd className="px-1 py-0.5 bg-gray-200 rounded">Tab</kbd> -
+                  Standard navigation
+                </li>
+              </ul>
+            </div>
+          </form>
+        </main>
       </div>
-    </div>
+    </>
   );
 }
+// "use client";
+// import { useState } from "react";
+// import { AIState } from "../../config/AIConfig";
+// import ShowData from "./components/ShowData";
+
+// export default function LocationForm() {
+//   const [formData, setFormData] = useState({
+//     stateName: "",
+//     countryName: "",
+//   });
+//   const [errors, setErrors] = useState({});
+//   const [submitted, setSubmitted] = useState(false);
+//   const [data, setData] = useState("");
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({
+//       ...prev,
+//       [name]: value,
+//     }));
+
+//     // Clear error when user starts typing
+//     if (errors[name]) {
+//       setErrors((prev) => ({
+//         ...prev,
+//         [name]: "",
+//       }));
+//     }
+//   };
+
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.stateName.trim()) {
+//       newErrors.stateName = "State name is required";
+//     }
+
+//     if (!formData.countryName.trim()) {
+//       newErrors.countryName = "Country name is required";
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleKeyPress = (e) => {
+//     if (e.key === "Enter") {
+//       handleSubmit(e);
+//     } else if (e.key === "Escape") {
+//       handleReset();
+//     }
+//   };
+
+//   const handleSubmit = async (e) => {
+//     if (e) e.preventDefault();
+
+//     if (!validateForm()) return;
+
+//     console.log("Form submitted:", formData);
+//     const prompt = `give me list of cities in given state:${formData.stateName},country:${formData.countryName}.include cities,short description,history,famous for. in json formate`;
+//     try {
+//       const result = await AIState.sendMessage(prompt);
+//       const response = await result.response.text();
+//       const josn = JSON.parse(response);
+//       setData(josn);
+//       setSubmitted(true); // ✅ This line is important
+//       console.log(response);
+//     } catch (error) {
+//       console.log(error);
+//     }
+//   };
+
+//   const handleReset = () => {
+//     setFormData({
+//       stateName: "",
+//       countryName: "",
+//     });
+//     setErrors({});
+//   };
+
+//   if (submitted) {
+//     return (
+//       <>
+//         <ShowData
+//           data={data}
+//           state={formData.stateName}
+//           setSubmitted={setSubmitted}
+//         />
+//       </>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
+//         <div className="mb-6">
+//           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2">
+//             Location Information
+//           </h1>
+//           <p className="text-gray-600 text-center text-sm sm:text-base">
+//             Please enter your state and country details
+//           </p>
+//         </div>
+
+//         <div className="space-y-6">
+//           {/* State Name Field */}
+//           <div>
+//             <label
+//               htmlFor="stateName"
+//               className="block text-sm font-medium text-gray-700 mb-2"
+//             >
+//               State Name{" "}
+//               <span className="text-red-500" aria-label="required">
+//                 *
+//               </span>
+//             </label>
+//             <input
+//               type="text"
+//               id="stateName"
+//               name="stateName"
+//               value={formData.stateName}
+//               onChange={handleInputChange}
+//               onKeyDown={handleKeyPress}
+//               aria-required="true"
+//               aria-invalid={errors.stateName ? "true" : "false"}
+//               aria-describedby={
+//                 errors.stateName ? "stateName-error" : undefined
+//               }
+//               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
+//                 errors.stateName
+//                   ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+//                   : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+//               }`}
+//               placeholder="Enter state name"
+//             />
+//             {errors.stateName && (
+//               <p
+//                 id="stateName-error"
+//                 className="mt-1 text-sm text-red-600"
+//                 role="alert"
+//               >
+//                 {errors.stateName}
+//               </p>
+//             )}
+//           </div>
+
+//           {/* Country Name Field */}
+//           <div>
+//             <label
+//               htmlFor="countryName"
+//               className="block text-sm font-medium text-gray-700 mb-2"
+//             >
+//               Country Name{" "}
+//               <span className="text-red-500" aria-label="required">
+//                 *
+//               </span>
+//             </label>
+//             <input
+//               type="text"
+//               id="countryName"
+//               name="countryName"
+//               value={formData.countryName}
+//               onChange={handleInputChange}
+//               aria-required="true"
+//               aria-invalid={errors.countryName ? "true" : "false"}
+//               aria-describedby={
+//                 errors.countryName ? "countryName-error" : undefined
+//               }
+//               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 transition duration-200 ${
+//                 errors.countryName
+//                   ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+//                   : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+//               }`}
+//               placeholder="Enter country name"
+//             />
+//             {errors.countryName && (
+//               <p
+//                 id="countryName-error"
+//                 className="mt-1 text-sm text-red-600"
+//                 role="alert"
+//               >
+//                 {errors.countryName}
+//               </p>
+//             )}
+//           </div>
+
+//           {/* Form Actions */}
+//           <div className="flex flex-col sm:flex-row gap-3">
+//             <button
+//               type="button"
+//               onClick={handleSubmit}
+//               className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 font-medium"
+//             >
+//               Submit
+//             </button>
+//             <button
+//               type="button"
+//               onClick={handleReset}
+//               className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 font-medium"
+//             >
+//               Reset
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
