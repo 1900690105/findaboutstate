@@ -81,7 +81,11 @@ export default function LocationForm() {
   if (submitted) {
     return (
       <>
-        <ShowData data={data} state={formData.stateName} />
+        <ShowData
+          data={data}
+          state={formData.stateName}
+          setSubmitted={setSubmitted}
+        />
       </>
     );
   }

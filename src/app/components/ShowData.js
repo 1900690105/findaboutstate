@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import { Search, MapPin, Clock, Star, Filter } from "lucide-react";
 
-const ShowData = ({ data, state }) => {
+const ShowData = ({ data, state, setSubmitted }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCity, setSelectedCity] = useState(null);
 
@@ -44,6 +44,14 @@ const ShowData = ({ data, state }) => {
               Discover the rich heritage, culture, and beauty of {state}&#39;s
               magnificent cities
             </p>
+            <button
+              className="bg-amber-400 p-5 rounded-2xl text-white"
+              onClick={() => {
+                setSubmitted(false);
+              }}
+            >
+              Go Back
+            </button>
           </div>
 
           {/* Search Bar */}
