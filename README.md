@@ -314,6 +314,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ by [Nikhil ](https://github.com/1900690105)**
+**Made with ❤️ by [Nikhil & Saraswati ](https://github.com/1900690105)**
 
 ⭐ Star this repo if you found it helpful!
