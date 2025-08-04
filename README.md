@@ -2,7 +2,8 @@
 
 An intelligent web application that automatically detects your location and provides comprehensive information about cities in any state or country using AI technology.
 
-![City Information Finder](https://github.com/1900690105/findaboutstate/blob/main/public/video.mp4)
+![City Information Finder](https://github.com/1900690105/findaboutstate/blob/main/public/Screenshot%20(1).png)
+![City Information Finder](https://github.com/1900690105/findaboutstate/blob/main/public/Screenshot%20(2).png)
 
 
 ## ✨ Features
